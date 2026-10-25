@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Launcher</title>
+<style>
+:root{color-scheme:dark;--bg:#0c141c;--line:#24394a;--text:#e9f2f9;--mut:#8ea6b8;--acc:#1b9dff;--acc2:#67c1f5;--gold:#ffd25e;--card:#1c3243;--pill:#223a4c;--selbg:#ffffff12;--trk:#ffffff22;--panel:#0f1a23;box-sizing:border-box;padding:max(env(safe-area-inset-top,0px),var(--st,0px)) max(env(safe-area-inset-right,0px),var(--sr,0px)) max(env(safe-area-inset-bottom,0px),var(--sb,0px)) max(env(safe-area-inset-left,0px),var(--sl,0px))}
+:root.light{color-scheme:light;--text:#10202c;--mut:#4d6678;--line:#b6c6d2;--acc2:#0b78c9;--gold:#b8860b;--card:#dbe5ec;--pill:#cfdbe4;--selbg:#00000014;--trk:#00000026;--panel:#f6f9fb}
+*,*::before,*::after{box-sizing:inherit;margin:0}
+[hidden]{display:none!important}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+body{height:100%;overflow:hidden;color:var(--text);font:15px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
+#app{height:100%;display:flex;flex-direction:column}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 18px}
+.brand{font-weight:800;color:var(--acc2)}
+.lt{display:flex;align-items:center;gap:4px}
+.gear{display:grid;place-items:center;width:34px;height:34px;padding:0;background:none;border:0;border-radius:50%;color:var(--mut)}
+.gear svg{width:22px;height:22px;fill:currentColor}
+.gear:active{background:var(--selbg);color:var(--text)}
+.hints u{text-decoration:none}
+#bgimg{position:fixed;inset:0;z-index:-1;background:center/cover no-repeat}
+#bgimg::after{content:"";position:absolute;inset:0;background:#0000006b}
+/* settings */
+#set{position:fixed;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;background:#0009;padding:max(env(safe-area-inset-top,0px),var(--st,0px)) max(env(safe-area-inset-right,0px),var(--sr,0px)) max(env(safe-area-inset-bottom,0px),var(--sb,0px)) max(env(safe-area-inset-left,0px),var(--sl,0px))}
+.sp{display:flex;flex-direction:column;width:min(calc(100% - 16px),780px);max-height:calc(100% - 16px);background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.sh{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line)}
+.sh h2{font-size:1.05rem}
+.x{padding:6px 14px}
+.sb{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;padding:12px 14px;overflow-y:auto;scrollbar-width:none}
+.sc{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sc h3{font-size:.82rem;color:var(--mut)}
+.note{color:var(--mut);font-size:.8rem}
+.sw{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.swt{width:34px;height:34px;justify-self:center;border-radius:50%;border:2px solid var(--line);padding:0}
+.swt.on{border-color:var(--text);box-shadow:0 0 0 2px var(--acc)}
+.sl{display:grid;gap:4px;font-size:.78rem;color:var(--mut)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:14px;border-radius:9px;background:var(--trk);outline:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--acc)}
+#hh{background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+.lg{display:flex;flex-direction:column;gap:6px}
+.lb{text-align:left}
+.lb.on{border-color:var(--acc2)}
+.lb.on::after{content:" ✓"}
+.btn:disabled{opacity:.4}
+.fc{outline:3px solid var(--acc2);outline-offset:2px}
+.tabs{display:flex;gap:2px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:6px 12px;color:var(--mut);font-weight:600}
+.tab.on{color:var(--text);border-color:var(--acc)}
+.status{display:flex;gap:12px;min-width:80px;justify-content:flex-end;color:var(--mut);font-size:.85rem}
+
+/* icon grid: just the icon and its name, no card behind it */
+main{flex:1;min-height:0;display:flex}
+#list{flex:1;min-width:0;position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));grid-auto-rows:max-content;align-content:start;gap:6px;padding:10px 14px;overflow-y:auto;scroll-behavior:smooth;scrollbar-width:none}
+#list::-webkit-scrollbar{display:none}
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:10px 4px 8px;background:none;border:2px solid transparent;border-radius:14px}
+.tile img{display:block;width:60px;height:60px;border-radius:22%}
+.tile span{max-width:100%;font-size:.75rem;color:var(--mut);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tile.sel{background:var(--selbg);border-color:var(--acc2)}
+.tile.sel span{color:var(--text)}
+.st{position:absolute;top:4px;right:8px;font-style:normal;font-size:.8rem;color:var(--gold)}
+.empty{grid-column:1/-1;justify-self:center;padding:24px;color:var(--mut);text-align:center;max-width:34ch}
+
+/* right panel */
+#detail{width:min(32%,280px);flex:none;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:12px 22px 12px 8px}
+#di{display:block;width:64px;height:64px;border-radius:22%}
+#t{font-size:1.4rem;font-weight:800;line-height:1.1;overflow-wrap:anywhere}
+#m{color:var(--mut);font-size:.88rem;margin-top:4px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:10px 14px;font-weight:600}
+.btn.go{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:800;padding:13px 14px;font-size:1.05rem}
+.row{display:flex;gap:8px}.row .btn{flex:1}
+
+/* bottom hints */
+.hints{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;padding:5px 16px;color:var(--mut);font-size:.74rem}
+.hints b{display:inline-block;min-width:1.6em;padding:0 6px;margin-right:4px;border-radius:99px;background:var(--pill);color:var(--text);text-align:center}
+
+/* launching screen: plain background, icon and name only */
+#ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:5;background:var(--bg)}
+#ov.on{display:flex}
+#oi{width:84px;border-radius:22%}
+#ot{font-size:1.6rem;font-weight:800}
+.bar{width:min(50vw,300px);height:6px;border-radius:9px;background:var(--trk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc2);animation:fill .9s linear forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+#toast{color:#fff;position:fixed;left:50%;bottom:40px;transform:translateX(-50%);max-width:86vw;text-align:center;background:#000c;border:1px solid var(--line);padding:8px 16px;border-radius:8px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){#list{scroll-behavior:auto}#toast{transition:none}.bar i{animation-duration:.01s}}
+</style>
+</head>
+<body>
+<div id="bgimg" hidden></div>
+<div id="app">
+  <header class="top">
+    <div class="lt"><span class="brand" id="brand">Launcher</span><button class="gear" id="gear" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button></div>
+    <nav class="tabs">
+      <button class="tab" data-t="0" data-i="home">Home</button>
+      <button class="tab" data-t="1" data-i="lib">Library</button>
+      <button class="tab" data-t="2" data-i="favs">Favorites</button>
+      <button class="tab" data-t="3" data-i="all">All apps</button>
+    </nav>
+    <div class="status"><span id="bat"></span><span id="clk"></span></div>
+  </header>
+  <main>
+    <div id="list"></div>
+    <section id="detail">
+      <img id="di" alt="">
+      <div><div id="t"></div><div id="m"></div></div>
+      <button class="btn go" id="play">Play</button>
+      <div class="row" id="row"><button class="btn" id="fav"></button><button class="btn" id="del" data-i="rm">Remove</button></div>
+    </section>
+  </main>
+  <footer class="hints">
+    <span><b>◀ ▲ ▼ ▶</b><u data-i="move">Move</u></span><span><b>A</b><u data-i="play">Play</u></span><span><b>Y</b><u data-i="hfav">Favorite</u></span><span><b>LB</b><b>RB</b><u data-i="tabs">Switch tab</u></span><span><b>Start</b><u data-i="hset">Settings</u></span>
+  </footer>
+</div>
+<div id="ov"><img id="oi" alt=""><div id="ot"></div><div class="bar"><i></i></div></div>
+<div id="set" hidden>
+  <div class="sp" role="dialog" aria-modal="true">
+    <div class="sh"><h2 data-i="st">Settings</h2><button class="btn x sf" id="sx" data-i="close">Close</button></div>
+    <div class="sb">
+      <section class="sc">
+        <h3 data-i="bgimg">Background image</h3>
+        <p class="note" id="imgnote"></p>
+        <button class="btn sf" id="pick" data-i="pick">Choose image</button>
+        <button class="btn sf" id="unpick" data-i="rmimg">Remove image</button>
+      </section>
+      <section class="sc">
+        <h3 data-i="bgcol">Background color</h3>
+        <div class="sw" id="sw"></div>
+        <label class="sl"><span data-i="hue">Hue</span><input type="range" class="sf" id="hh" min="0" max="360"></label>
+        <label class="sl"><span data-i="sat">Saturation</span><input type="range" class="sf" id="hs" min="0" max="100"></label>
+        <label class="sl"><span data-i="bri">Brightness</span><input type="range" class="sf" id="hv" min="0" max="100"></label>
+        <button class="btn sf" id="rc" data-i="reset">Reset color</button>
+      </section>
+      <section class="sc">
+        <h3 data-i="lang">Language</h3>
+        <div class="lg" id="lg"></div>
+      </section>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const LANGS=[['en','English'],['hi','हिन्दी'],['es','Español'],['fr','Français'],['pt','Português'],['ja','日本語']];
+const T={
+en:{home:'Home',lib:'Library',favs:'Favorites',all:'All apps',play:'Play',add:'Add to library',rm:'Remove',faved:'★ Favorited',fav:'☆ Favorite',never:'Not played yet',notlib:'Not in your library yet',now:'Last played just now',min:n=>`Last played ${n} min ago`,hr:n=>`Last played ${n} hours ago`,day:n=>`Last played ${n} days ago`,move:'Move',hfav:'Favorite',tabs:'Switch tab',hset:'Settings',eopen:'Open this page inside the launcher app to see installed apps.',escan:'Scanning installed apps…',efav:'No favorites yet. Select a game, then press Y or tap Favorite.',eall:'No other apps found.',egames:'No games found yet. Open All apps and add yours.',added:n=>`${n} added to Library`,noinfo:'No info available',st:'Settings',bgimg:'Background image',pick:'Choose image',rmimg:'Remove image',noimg:'No image selected',hasimg:'Custom image in use',bgcol:'Background color',hue:'Hue',sat:'Saturation',bri:'Brightness',reset:'Reset color',lang:'Language',close:'Close',imgerr:'Could not load that image'},
+hi:{home:'होम',lib:'लाइब्रेरी',favs:'पसंदीदा',all:'सभी ऐप्स',play:'खेलें',add:'लाइब्रेरी में जोड़ें',rm:'हटाएं',faved:'★ पसंदीदा',fav:'☆ पसंदीदा',never:'अभी तक नहीं खेला',notlib:'अभी आपकी लाइब्रेरी में नहीं है',now:'अभी-अभी खेला',min:n=>`${n} मिनट पहले खेला`,hr:n=>`${n} घंटे पहले खेला`,day:n=>`${n} दिन पहले खेला`,move:'नेविगेट',hfav:'पसंदीदा',tabs:'टैब बदलें',hset:'सेटिंग्स',eopen:'इंस्टॉल किए गए ऐप्स देखने के लिए यह पेज लॉन्चर ऐप के अंदर खोलें।',escan:'इंस्टॉल किए गए ऐप्स खोजे जा रहे हैं…',efav:'अभी कोई पसंदीदा नहीं है। कोई गेम चुनें, फिर Y दबाएं या पसंदीदा पर टैप करें।',eall:'कोई और ऐप नहीं मिला।',egames:'अभी कोई गेम नहीं मिला। "सभी ऐप्स" खोलकर अपने गेम जोड़ें।',added:n=>`${n} लाइब्रेरी में जोड़ा गया`,noinfo:'कोई जानकारी उपलब्ध नहीं',st:'सेटिंग्स',bgimg:'बैकग्राउंड इमेज',pick:'इमेज चुनें',rmimg:'इमेज हटाएं',noimg:'कोई इमेज नहीं चुनी गई',hasimg:'कस्टम इमेज लगी है',bgcol:'बैकग्राउंड रंग',hue:'रंगत',sat:'गहराई',bri:'चमक',reset:'रंग रीसेट करें',lang:'भाषा',close:'बंद करें',imgerr:'यह इमेज लोड नहीं हो सकी'},
+es:{home:'Inicio',lib:'Biblioteca',favs:'Favoritos',all:'Todas las apps',play:'Jugar',add:'Añadir a la biblioteca',rm:'Quitar',faved:'★ En favoritos',fav:'☆ Favorito',never:'Aún no jugado',notlib:'Aún no está en tu biblioteca',now:'Jugado hace un momento',min:n=>`Jugado hace ${n} min`,hr:n=>`Jugado hace ${n} h`,day:n=>`Jugado hace ${n} d`,move:'Mover',hfav:'Favorito',tabs:'Cambiar pestaña',hset:'Ajustes',eopen:'Abre esta página dentro de la app del launcher para ver las apps instaladas.',escan:'Buscando apps instaladas…',efav:'Aún no hay favoritos. Selecciona un juego y pulsa Y o toca Favorito.',eall:'No se encontraron otras apps.',egames:'Aún no se encontraron juegos. Abre «Todas las apps» y añade los tuyos.',added:n=>`${n} añadido a la biblioteca`,noinfo:'Sin información disponible',st:'Ajustes',bgimg:'Imagen de fondo',pick:'Elegir imagen',rmimg:'Quitar imagen',noimg:'Ninguna imagen seleccionada',hasimg:'Usando imagen personalizada',bgcol:'Color de fondo',hue:'Tono',sat:'Saturación',bri:'Brillo',reset:'Restablecer color',lang:'Idioma',close:'Cerrar',imgerr:'No se pudo cargar esa imagen'},
+fr:{home:'Accueil',lib:'Bibliothèque',favs:'Favoris',all:'Toutes les apps',play:'Jouer',add:'Ajouter à la bibliothèque',rm:'Retirer',faved:'★ Dans les favoris',fav:'☆ Favori',never:'Jamais joué',notlib:'Pas encore dans votre bibliothèque',now:'Joué à l’instant',min:n=>`Joué il y a ${n} min`,hr:n=>`Joué il y a ${n} h`,day:n=>`Joué il y a ${n} j`,move:'Déplacer',hfav:'Favori',tabs:'Changer d’onglet',hset:'Réglages',eopen:'Ouvrez cette page dans l’application du launcher pour voir les apps installées.',escan:'Recherche des apps installées…',efav:'Aucun favori pour l’instant. Sélectionnez un jeu, puis appuyez sur Y ou touchez Favori.',eall:'Aucune autre app trouvée.',egames:'Aucun jeu trouvé pour l’instant. Ouvrez « Toutes les apps » pour ajouter les vôtres.',added:n=>`${n} ajouté à la bibliothèque`,noinfo:'Aucune info disponible',st:'Réglages',bgimg:'Image d’arrière-plan',pick:'Choisir une image',rmimg:'Retirer l’image',noimg:'Aucune image sélectionnée',hasimg:'Image personnalisée utilisée',bgcol:'Couleur d’arrière-plan',hue:'Teinte',sat:'Saturation',bri:'Luminosité',reset:'Réinitialiser la couleur',lang:'Langue',close:'Fermer',imgerr:'Impossible de charger cette image'},
+pt:{home:'Início',lib:'Biblioteca',favs:'Favoritos',all:'Todos os apps',play:'Jogar',add:'Adicionar à biblioteca',rm:'Remover',faved:'★ Favorito',fav:'☆ Favoritar',never:'Ainda não jogado',notlib:'Ainda não está na sua biblioteca',now:'Jogado agora há pouco',min:n=>`Jogado há ${n} min`,hr:n=>`Jogado há ${n} h`,day:n=>`Jogado há ${n} d`,move:'Mover',hfav:'Favorito',tabs:'Trocar aba',hset:'Configurações',eopen:'Abra esta página dentro do app do launcher para ver os apps instalados.',escan:'Procurando apps instalados…',efav:'Nenhum favorito ainda. Selecione um jogo e pressione Y ou toque em Favoritar.',eall:'Nenhum outro app encontrado.',egames:'Nenhum jogo encontrado ainda. Abra "Todos os apps" e adicione os seus.',added:n=>`${n} adicionado à biblioteca`,noinfo:'Nenhuma informação disponível',st:'Configurações',bgimg:'Imagem de fundo',pick:'Escolher imagem',rmimg:'Remover imagem',noimg:'Nenhuma imagem selecionada',hasimg:'Usando imagem personalizada',bgcol:'Cor de fundo',hue:'Matiz',sat:'Saturação',bri:'Brilho',reset:'Redefinir cor',lang:'Idioma',close:'Fechar',imgerr:'Não foi possível carregar essa imagem'},
+ja:{home:'ホーム',lib:'ライブラリ',favs:'お気に入り',all:'すべてのアプリ',play:'プレイ',add:'ライブラリに追加',rm:'削除',faved:'★ お気に入り済み',fav:'☆ お気に入り',never:'未プレイ',notlib:'まだライブラリにありません',now:'たった今プレイ',min:n=>`${n}分前にプレイ`,hr:n=>`${n}時間前にプレイ`,day:n=>`${n}日前にプレイ`,move:'移動',hfav:'お気に入り',tabs:'タブ切替',hset:'設定',eopen:'インストール済みアプリを表示するには、このページをランチャーアプリ内で開いてください。',escan:'インストール済みアプリをスキャン中…',efav:'お気に入りはまだありません。ゲームを選んで Y を押すか、「お気に入り」をタップしてください。',eall:'他のアプリは見つかりませんでした。',egames:'ゲームがまだ見つかりません。「すべてのアプリ」から追加してください。',added:n=>`${n} をライブラリに追加しました`,noinfo:'情報がありません',st:'設定',bgimg:'背景画像',pick:'画像を選ぶ',rmimg:'画像を削除',noimg:'画像が選択されていません',hasimg:'カスタム画像を使用中',bgcol:'背景色',hue:'色相',sat:'彩度',bri:'明るさ',reset:'色をリセット',lang:'言語',close:'閉じる',imgerr:'この画像を読み込めませんでした'}
+};
+const tr=(k,...a)=>{const d=T[S.cfg.lang]||T.en,v=d[k]!=null?d[k]:T.en[k];return typeof v=='function'?v(...a):v};
+const hx=n=>Math.round(n).toString(16).padStart(2,'0');
+function hsv2hex(h,s,v){s/=100;v/=100;const f=n=>{const k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return '#'+hx(f(5)*255)+hx(f(3)*255)+hx(f(1)*255)}
+function hex2hsv(c){const r=parseInt(c.slice(1,3),16)/255,g=parseInt(c.slice(3,5),16)/255,b=parseInt(c.slice(5,7),16)/255,mx=Math.max(r,g,b),d=mx-Math.min(r,g,b);let h=0;if(d){h=mx==r?((g-b)/d)%6:mx==g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}return[Math.round(h),Math.round(mx?d/mx*100:0),Math.round(mx*100)]}
+function lum(c){const v=[1,3,5].map(k=>{const x=parseInt(c.slice(k,k+2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+// the app reports the camera cutout size (in px) so content stays clear of it
+window.setInsets=(l,t,r,b)=>{const s=document.documentElement.style;s.setProperty('--sl',l+'px');s.setProperty('--st',t+'px');s.setProperty('--sr',r+'px');s.setProperty('--sb',b+'px')};
+let A=[],ready=false,tab=0,i=0,timer=null,S={fav:[],add:[],hide:[],last:{}};
+try{Object.assign(S,JSON.parse(localStorage.getItem('gl')||'{}'))}catch(e){}
+S.cfg=Object.assign({lang:'en',bg:'#0c141c'},S.cfg);
+if(!T[S.cfg.lang])S.cfg.lang='en';
+if(!/^#[0-9a-f]{6}$/i.test(S.cfg.bg))S.cfg.bg='#0c141c';
+let bgData='',hsv=hex2hsv(S.cfg.bg),nav=false,sfi=0;
+const save=()=>{try{localStorage.setItem('gl',JSON.stringify(S))}catch(e){}};
+const has=(k,p)=>S[k].includes(p);
+// Games = apps Android marks as games, plus any app the person adds from All apps
+const isG=a=>(a.g||has('add',a.p))&&!has('hide',a.p);
+const esc=s=>s.replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';');
+const ago=t=>{if(!t)return tr('never');const m=Math.round((Date.now()-t)/6e4);return m<1?tr('now'):m<60?tr('min',m):m<1440?tr('hr',Math.round(m/60)):tr('day',Math.round(m/1440))};
+const list=()=>tab==0?A.filter(isG).sort((x,y)=>(S.last[y.p]||0)-(S.last[x.p]||0)).slice(0,8):tab==1?A.filter(isG):tab==2?A.filter(a=>has('fav',a.p)):A.filter(a=>!isG(a));
+const empty=()=>tr(!window.Android?'eopen':!ready?'escan':tab==2?'efav':tab==3?'eall':'egames');
+
+function scan(){
+  try{A=window.Android?JSON.parse(Android.apps()):[]}catch(e){A=[]}
+  A.sort((x,y)=>x.n.localeCompare(y.n));ready=true;build();
+}
+// full redraw: only when the tab or the list itself changes
+function build(){
+  const L=list();if(i>=L.length)i=Math.max(0,L.length-1);
+  document.querySelectorAll('.tab').forEach((b,k)=>b.classList.toggle('on',k==tab));
+  const el=$('#list');
+  el.innerHTML=L.length?L.map((a,k)=>`<button class="tile" data-k="${k}" tabindex="-1"><img src="${a.i}" alt=""><span>${esc(a.n)}</span><i class="st"${has('fav',a.p)?'':' hidden'}>★</i></button>`).join(''):`<p class="empty">${empty()}</p>`;
+  el.style.scrollBehavior='auto';el.scrollTop=0;el.style.scrollBehavior='';
+  paint();
+}
+// light update: move the highlight and refresh the right panel
+function paint(){
+  const L=list(),a=L[i];
+  document.querySelectorAll('.tile').forEach((t,k)=>t.classList.toggle('sel',k==i));
+  $('#detail').hidden=!a;
+  if(a){
+    $('#di').src=a.i;$('#t').textContent=a.n;
+    $('#m').textContent=tab==3?tr('notlib'):ago(S.last[a.p]);
+    $('#play').textContent=tr(tab==3?'add':'play');$('#row').hidden=tab==3;
+    $('#fav').textContent=tr(has('fav',a.p)?'faved':'fav');
+  }
+  fit();
+}
+// keep the selected icon on screen
+function fit(){
+  const el=$('#list'),t=el.querySelectorAll('.tile')[i];if(!t)return;
+  const top=t.offsetTop-8,bot=t.offsetTop+t.offsetHeight+8;
+  if(top<el.scrollTop)el.scrollTop=top;
+  else if(bot>el.scrollTop+el.clientHeight)el.scrollTop=bot-el.clientHeight;
+}
+function toast(t,ms=2600){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('on'),ms)}
+function stop(){clearTimeout(timer);timer=null;$('#ov').classList.remove('on')}
+function play(){
+  const a=list()[i];if(!a||timer)return;
+  if(tab==3){S.add.push(a.p);S.hide=S.hide.filter(x=>x!=a.p);save();toast(tr('added',a.n));return build()}
+  const o=$('#ov');$('#oi').src=a.i;$('#ot').textContent=a.n;
+  o.classList.remove('on');void o.offsetWidth;o.classList.add('on');
+  S.last[a.p]=Date.now();save();
+  timer=setTimeout(()=>{stop();if(window.Android)Android.launch(a.p);i=0;build()},900);
+}
+function act(a){
+  if(timer){if(a=='back')stop();return}
+  if(setOpen())return setAct(a);
+  if(a=='set')return openSet();
+  const L=list(),n=L.length,el=$('#list');
+  const cols=Math.max(1,getComputedStyle(el).gridTemplateColumns.split(' ').length);
+  if(a=='l')i=Math.max(0,i-1);
+  else if(a=='r')i=Math.max(0,Math.min(n-1,i+1));
+  else if(a=='u'){if(i-cols>=0)i-=cols}
+  else if(a=='d'){if(i+cols<n)i+=cols;else if(n&&((i/cols)|0)<(((n-1)/cols)|0))i=n-1}
+  else if(a=='ok')return play();
+  else if(a=='fav'){
+    const x=L[i];
+    if(x&&tab<3){
+      S.fav=has('fav',x.p)?S.fav.filter(p=>p!=x.p):[...S.fav,x.p];save();
+      if(tab==2)return build();
+      el.querySelectorAll('.tile')[i].querySelector('.st').hidden=!has('fav',x.p);
+    }
+  }
+  else if(a=='tl'||a=='tr'){tab=(tab+(a=='tr'?1:3))%4;i=0;return build()}
+  paint();
+}
+$('#list').addEventListener('click',e=>{const c=e.target.closest('.tile');if(!c)return;const k=+c.dataset.k;if(k==i)play();else{i=k;paint()}});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=+b.dataset.t;i=0;build()});
+$('#play').onclick=play;
+// tap "Launcher" to see screen/cutout info
+$('#brand').onclick=()=>{try{toast(Android.dbg(),9000)}catch(e){toast(tr('noinfo'))}};
+$('#fav').onclick=()=>act('fav');
+$('#del').onclick=()=>{const a=list()[i];if(!a)return;S.hide.push(a.p);S.add=S.add.filter(x=>x!=a.p);save();build()};
+$('#ov').onclick=stop;
+// keyboard (ignored while a controller is connected, so a pad never double-fires)
+const gp=()=>navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;
+const km={ArrowLeft:'l',ArrowRight:'r',ArrowUp:'u',ArrowDown:'d',Enter:'ok',Escape:'back',Backspace:'back',f:'fav',y:'fav',q:'tl',e:'tr',s:'set'};
+addEventListener('keydown',e=>{const a=km[e.key];if(a&&!gp()){e.preventDefault();act(a)}});
+// controller: d-pad or left stick, A play, B back, Y favorite, bumpers switch tab
+const pm={14:'l',15:'r',12:'u',13:'d',0:'ok',1:'back',3:'fav',4:'tl',5:'tr',9:'set'},rep={l:1,r:1,u:1,d:1};let hold={};
+function poll(t){
+  const p=gp(),on={};
+  if(p){
+    p.buttons.forEach((b,k)=>{if(b.pressed&&pm[k])on[pm[k]]=1});
+    const x=p.axes[0]||0,y=p.axes[1]||0;
+    if(x<-.6)on.l=1;if(x>.6)on.r=1;if(y<-.6)on.u=1;if(y>.6)on.d=1;
+  }
+  for(const a in on){
+    if(!(a in hold)){hold[a]=t+300;act(a)}
+    else if(rep[a]&&t>=hold[a]){hold[a]=t+110;act(a)}
+  }
+  for(const a in hold)if(!on[a])delete hold[a];
+  requestAnimationFrame(poll);
+}
+requestAnimationFrame(poll);
+const tick=()=>$('#clk').textContent=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+tick();setInterval(tick,15000);
+try{if(navigator.getBattery)navigator.getBattery().then(b=>{const u=()=>$('#bat').textContent=Math.round(b.level*100)+'%'+(b.charging?' ⚡':'');u();b.onlevelchange=b.onchargingchange=u}).catch(()=>{})}catch(e){}
+// ---- settings: background image, background color, language ----
+const SW=['#0c141c','#000000','#1e1e24','#0b1d3a','#231942','#0f2a1d','#3a0f1a','#0b3a3a','#2b3440','#f2f5f7'];
+function applyTheme(){
+  const c=S.cfg.bg,r=document.documentElement,b=$('#bgimg');
+  r.style.setProperty('--bg',c);
+  r.classList.toggle('light',!bgData&&lum(c)>.22);
+  b.style.backgroundImage=bgData?`url("${bgData}")`:'none';b.hidden=!bgData;
+  try{Android.setBgColor(c)}catch(e){}
+}
+function applyLang(){
+  document.documentElement.lang=S.cfg.lang;
+  document.querySelectorAll('[data-i]').forEach(e=>e.textContent=tr(e.dataset.i));
+  $('#gear').title=tr('st');$('#gear').setAttribute('aria-label',tr('st'));
+  build();if(setOpen())paintSet();
+}
+function loadBg(){try{bgData=window.Android?Android.bg():''}catch(e){bgData=''}applyTheme();if(setOpen())paintSet()}
+window.bgPicked=loadBg;
+window.bgFail=()=>toast(tr('imgerr'));
+const setOpen=()=>!$('#set').hidden;
+const sfs=()=>[...$('#set').querySelectorAll('.sf')].filter(e=>!e.disabled);
+function mark(){const L=sfs();sfi=Math.max(0,Math.min(sfi,L.length-1));L.forEach((e,k)=>e.classList.toggle('fc',nav&&k==sfi));const e=L[sfi];if(nav&&e)e.scrollIntoView({block:'nearest'})}
+function paintSet(){
+  const c=S.cfg.bg.toLowerCase();
+  $('#hh').value=hsv[0];$('#hs').value=hsv[1];$('#hv').value=hsv[2];
+  $('#sw').innerHTML=SW.map(x=>`<button class="swt sf${x==c?' on':''}" data-c="${x}" style="background:${x}" aria-label="${x}"></button>`).join('');
+  $('#lg').innerHTML=LANGS.map(([k,n])=>`<button class="btn lb sf${k==S.cfg.lang?' on':''}" data-l="${k}">${n}</button>`).join('');
+  $('#imgnote').textContent=tr(bgData?'hasimg':'noimg');
+  $('#unpick').disabled=!bgData;
+  mark();
+}
+function openSet(){if(timer)return;nav=false;sfi=0;$('#set').hidden=false;paintSet()}
+function closeSet(){$('#set').hidden=true}
+function setColor(c,fromHex){S.cfg.bg=c;if(fromHex)hsv=hex2hsv(c);save();applyTheme();paintSet()}
+// controller / keyboard inside the settings panel
+function setAct(a){
+  if(a=='back'||a=='set')return closeSet();
+  if(!nav){nav=true;return mark()}
+  const L=sfs(),e=L[sfi];if(!e)return;
+  if(e.type=='range'&&(a=='l'||a=='r')){const st=e.id=='hh'?5:2;e.value=+e.value+(a=='r'?st:-st);e.dispatchEvent(new Event('input'));return}
+  if(a=='ok'){if(e.type!='range')e.click();return}
+  if(a=='l'||a=='u')sfi--;else if(a=='r'||a=='d')sfi++;
+  mark();
+}
+$('#gear').onclick=openSet;
+$('#sx').onclick=closeSet;
+$('#set').addEventListener('click',e=>{if(e.target.id=='set')closeSet()});
+$('#pick').onclick=()=>{try{Android.pickImage()}catch(e){toast(tr('imgerr'))}};
+$('#unpick').onclick=()=>{try{Android.clearBg()}catch(e){}bgData='';applyTheme();paintSet()};
+$('#sw').onclick=e=>{const b=e.target.closest('.swt');if(b)setColor(b.dataset.c,true)};
+$('#lg').onclick=e=>{const b=e.target.closest('.lb');if(!b)return;S.cfg.lang=b.dataset.l;save();applyLang()};
+$('#rc').onclick=()=>setColor('#0c141c',true);
+['hh','hs','hv'].forEach(id=>$('#'+id).oninput=()=>{hsv=[+$('#hh').value,+$('#hs').value,+$('#hv').value];setColor(hsv2hex(hsv[0],hsv[1],hsv[2]),false)});
+applyTheme();applyLang();setTimeout(loadBg,0);
+requestAnimationFrame(()=>setTimeout(scan,50));
+</script>
+</body>
+</html>
