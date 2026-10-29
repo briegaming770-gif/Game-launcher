@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Game Launcher</title>
 <style>
-:root{color-scheme:dark;--bg:#0c141c;--line:#24394a;--text:#e9f2f9;--mut:#8ea6b8;--acc:#1b9dff;--acc2:#67c1f5;--gold:#ffd25e;--card:#1c3243;--pill:#223a4c;--selbg:#ffffff12;--trk:#ffffff22;--panel:#0f1a23;box-sizing:border-box;padding:max(env(safe-area-inset-top,0px),var(--st,0px)) max(env(safe-area-inset-right,0px),var(--sr,0px)) max(env(safe-area-inset-bottom,0px),var(--sb,0px)) max(env(safe-area-inset-left,0px),var(--sl,0px))}
-:root.light{color-scheme:light;--text:#10202c;--mut:#4d6678;--line:#b6c6d2;--acc2:#0b78c9;--gold:#b8860b;--card:#dbe5ec;--pill:#cfdbe4;--selbg:#00000014;--trk:#00000026;--panel:#f6f9fb}
+:root{color-scheme:dark;--bg:#0c141c;--line:#24394a;--text:#e9f2f9;--mut:#8ea6b8;--acc:#1b9dff;--acc2:#67c1f5;--gold:#ffd25e;--play:#1b9dff;--sel:#67c1f5;--card:#1c3243;--pill:#223a4c;--selbg:#ffffff12;--trk:#ffffff22;--panel:#0f1a23;box-sizing:border-box;padding:max(env(safe-area-inset-top,0px),var(--st,0px)) max(env(safe-area-inset-right,0px),var(--sr,0px)) max(env(safe-area-inset-bottom,0px),var(--sb,0px)) max(env(safe-area-inset-left,0px),var(--sl,0px))}
+:root.light{color-scheme:light;--text:#10202c;--mut:#4d6678;--line:#b6c6d2;--acc2:#0b78c9;--sel:#0b78c9;--gold:#b8860b;--card:#dbe5ec;--pill:#cfdbe4;--selbg:#00000014;--trk:#00000026;--panel:#f6f9fb}
 *,*::before,*::after{box-sizing:inherit;margin:0}
 [hidden]{display:none!important}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
@@ -60,7 +60,15 @@ main{flex:1;min-height:0;display:flex}
 .tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:10px 4px 8px;background:none;border:2px solid transparent;border-radius:14px}
 .tile img{display:block;width:60px;height:60px;border-radius:22%}
 .tile span{max-width:100%;font-size:.75rem;color:var(--mut);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tile.sel{background:var(--selbg);border-color:var(--acc2)}
+.tile.sel{background:var(--selbg);border-color:var(--sel)}
+.tile img{transition:transform .15s}
+.tile.sel img{transform:scale(1.16)}
+.tg{display:flex;flex-wrap:wrap;gap:6px}
+.ch{flex:1;padding:6px 8px;font-size:.78rem}
+.ch.on,.so.on{border-color:var(--acc2)}
+.sn{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.so{padding:7px 8px;font-size:.8rem;text-align:left}
+.so.on::after{content:" ✓"}
 .tile.sel span{color:var(--text)}
 .st{position:absolute;top:4px;right:8px;font-style:normal;font-size:.8rem;color:var(--gold)}
 .empty{grid-column:1/-1;justify-self:center;padding:24px;color:var(--mut);text-align:center;max-width:34ch}
@@ -71,7 +79,7 @@ main{flex:1;min-height:0;display:flex}
 #t{font-size:1.4rem;font-weight:800;line-height:1.1;overflow-wrap:anywhere}
 #m{color:var(--mut);font-size:.88rem;margin-top:4px}
 .btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:10px 14px;font-weight:600}
-.btn.go{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:800;padding:13px 14px;font-size:1.05rem}
+.btn.go{background:var(--play);border-color:var(--play);color:var(--playt,#fff);font-weight:800;padding:13px 14px;font-size:1.05rem}
 .row{display:flex;gap:8px}.row .btn{flex:1}
 
 /* bottom hints */
@@ -88,7 +96,7 @@ main{flex:1;min-height:0;display:flex}
 @keyframes fill{from{width:0}to{width:100%}}
 #toast{color:#fff;position:fixed;left:50%;bottom:40px;transform:translateX(-50%);max-width:86vw;text-align:center;background:#000c;border:1px solid var(--line);padding:8px 16px;border-radius:8px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9}
 #toast.on{opacity:1}
-@media(prefers-reduced-motion:reduce){#list{scroll-behavior:auto}#toast{transition:none}.bar i{animation-duration:.01s}}
+@media(prefers-reduced-motion:reduce){#list{scroll-behavior:auto}#toast{transition:none}.tile img{transition:none}.bar i{animation-duration:.01s}}
 </style>
 </head>
 <body>
@@ -129,7 +137,8 @@ main{flex:1;min-height:0;display:flex}
         <button class="btn sf" id="unpick" data-i="rmimg">Remove image</button>
       </section>
       <section class="sc">
-        <h3 data-i="bgcol">Background color</h3>
+        <h3 data-i="colors">Colors</h3>
+        <div class="tg" id="tg"></div>
         <div class="sw" id="sw"></div>
         <label class="sl"><span data-i="hue">Hue</span><input type="range" class="sf" id="hh" min="0" max="360"></label>
         <label class="sl"><span data-i="sat">Saturation</span><input type="range" class="sf" id="hs" min="0" max="100"></label>
@@ -140,6 +149,10 @@ main{flex:1;min-height:0;display:flex}
         <h3 data-i="lang">Language</h3>
         <div class="lg" id="lg"></div>
       </section>
+      <section class="sc">
+        <h3 data-i="sound">Click sound</h3>
+        <div class="sn" id="sn"></div>
+      </section>
     </div>
   </div>
 </div>
@@ -148,12 +161,12 @@ main{flex:1;min-height:0;display:flex}
 const $=s=>document.querySelector(s);
 const LANGS=[['en','English'],['hi','हिन्दी'],['es','Español'],['fr','Français'],['pt','Português'],['ja','日本語']];
 const T={
-en:{home:'Home',lib:'Library',favs:'Favorites',all:'All apps',play:'Play',add:'Add to library',rm:'Remove',faved:'★ Favorited',fav:'☆ Favorite',never:'Not played yet',notlib:'Not in your library yet',now:'Last played just now',min:n=>`Last played ${n} min ago`,hr:n=>`Last played ${n} hours ago`,day:n=>`Last played ${n} days ago`,move:'Move',hfav:'Favorite',tabs:'Switch tab',hset:'Settings',eopen:'Open this page inside the launcher app to see installed apps.',escan:'Scanning installed apps…',efav:'No favorites yet. Select a game, then press Y or tap Favorite.',eall:'No other apps found.',egames:'No games found yet. Open All apps and add yours.',added:n=>`${n} added to Library`,noinfo:'No info available',st:'Settings',bgimg:'Background image',pick:'Choose image',rmimg:'Remove image',noimg:'No image selected',hasimg:'Custom image in use',bgcol:'Background color',hue:'Hue',sat:'Saturation',bri:'Brightness',reset:'Reset color',lang:'Language',close:'Close',imgerr:'Could not load that image'},
-hi:{home:'होम',lib:'लाइब्रेरी',favs:'पसंदीदा',all:'सभी ऐप्स',play:'खेलें',add:'लाइब्रेरी में जोड़ें',rm:'हटाएं',faved:'★ पसंदीदा',fav:'☆ पसंदीदा',never:'अभी तक नहीं खेला',notlib:'अभी आपकी लाइब्रेरी में नहीं है',now:'अभी-अभी खेला',min:n=>`${n} मिनट पहले खेला`,hr:n=>`${n} घंटे पहले खेला`,day:n=>`${n} दिन पहले खेला`,move:'नेविगेट',hfav:'पसंदीदा',tabs:'टैब बदलें',hset:'सेटिंग्स',eopen:'इंस्टॉल किए गए ऐप्स देखने के लिए यह पेज लॉन्चर ऐप के अंदर खोलें।',escan:'इंस्टॉल किए गए ऐप्स खोजे जा रहे हैं…',efav:'अभी कोई पसंदीदा नहीं है। कोई गेम चुनें, फिर Y दबाएं या पसंदीदा पर टैप करें।',eall:'कोई और ऐप नहीं मिला।',egames:'अभी कोई गेम नहीं मिला। "सभी ऐप्स" खोलकर अपने गेम जोड़ें।',added:n=>`${n} लाइब्रेरी में जोड़ा गया`,noinfo:'कोई जानकारी उपलब्ध नहीं',st:'सेटिंग्स',bgimg:'बैकग्राउंड इमेज',pick:'इमेज चुनें',rmimg:'इमेज हटाएं',noimg:'कोई इमेज नहीं चुनी गई',hasimg:'कस्टम इमेज लगी है',bgcol:'बैकग्राउंड रंग',hue:'रंगत',sat:'गहराई',bri:'चमक',reset:'रंग रीसेट करें',lang:'भाषा',close:'बंद करें',imgerr:'यह इमेज लोड नहीं हो सकी'},
-es:{home:'Inicio',lib:'Biblioteca',favs:'Favoritos',all:'Todas las apps',play:'Jugar',add:'Añadir a la biblioteca',rm:'Quitar',faved:'★ En favoritos',fav:'☆ Favorito',never:'Aún no jugado',notlib:'Aún no está en tu biblioteca',now:'Jugado hace un momento',min:n=>`Jugado hace ${n} min`,hr:n=>`Jugado hace ${n} h`,day:n=>`Jugado hace ${n} d`,move:'Mover',hfav:'Favorito',tabs:'Cambiar pestaña',hset:'Ajustes',eopen:'Abre esta página dentro de la app del launcher para ver las apps instaladas.',escan:'Buscando apps instaladas…',efav:'Aún no hay favoritos. Selecciona un juego y pulsa Y o toca Favorito.',eall:'No se encontraron otras apps.',egames:'Aún no se encontraron juegos. Abre «Todas las apps» y añade los tuyos.',added:n=>`${n} añadido a la biblioteca`,noinfo:'Sin información disponible',st:'Ajustes',bgimg:'Imagen de fondo',pick:'Elegir imagen',rmimg:'Quitar imagen',noimg:'Ninguna imagen seleccionada',hasimg:'Usando imagen personalizada',bgcol:'Color de fondo',hue:'Tono',sat:'Saturación',bri:'Brillo',reset:'Restablecer color',lang:'Idioma',close:'Cerrar',imgerr:'No se pudo cargar esa imagen'},
-fr:{home:'Accueil',lib:'Bibliothèque',favs:'Favoris',all:'Toutes les apps',play:'Jouer',add:'Ajouter à la bibliothèque',rm:'Retirer',faved:'★ Dans les favoris',fav:'☆ Favori',never:'Jamais joué',notlib:'Pas encore dans votre bibliothèque',now:'Joué à l’instant',min:n=>`Joué il y a ${n} min`,hr:n=>`Joué il y a ${n} h`,day:n=>`Joué il y a ${n} j`,move:'Déplacer',hfav:'Favori',tabs:'Changer d’onglet',hset:'Réglages',eopen:'Ouvrez cette page dans l’application du launcher pour voir les apps installées.',escan:'Recherche des apps installées…',efav:'Aucun favori pour l’instant. Sélectionnez un jeu, puis appuyez sur Y ou touchez Favori.',eall:'Aucune autre app trouvée.',egames:'Aucun jeu trouvé pour l’instant. Ouvrez « Toutes les apps » pour ajouter les vôtres.',added:n=>`${n} ajouté à la bibliothèque`,noinfo:'Aucune info disponible',st:'Réglages',bgimg:'Image d’arrière-plan',pick:'Choisir une image',rmimg:'Retirer l’image',noimg:'Aucune image sélectionnée',hasimg:'Image personnalisée utilisée',bgcol:'Couleur d’arrière-plan',hue:'Teinte',sat:'Saturation',bri:'Luminosité',reset:'Réinitialiser la couleur',lang:'Langue',close:'Fermer',imgerr:'Impossible de charger cette image'},
-pt:{home:'Início',lib:'Biblioteca',favs:'Favoritos',all:'Todos os apps',play:'Jogar',add:'Adicionar à biblioteca',rm:'Remover',faved:'★ Favorito',fav:'☆ Favoritar',never:'Ainda não jogado',notlib:'Ainda não está na sua biblioteca',now:'Jogado agora há pouco',min:n=>`Jogado há ${n} min`,hr:n=>`Jogado há ${n} h`,day:n=>`Jogado há ${n} d`,move:'Mover',hfav:'Favorito',tabs:'Trocar aba',hset:'Configurações',eopen:'Abra esta página dentro do app do launcher para ver os apps instalados.',escan:'Procurando apps instalados…',efav:'Nenhum favorito ainda. Selecione um jogo e pressione Y ou toque em Favoritar.',eall:'Nenhum outro app encontrado.',egames:'Nenhum jogo encontrado ainda. Abra "Todos os apps" e adicione os seus.',added:n=>`${n} adicionado à biblioteca`,noinfo:'Nenhuma informação disponível',st:'Configurações',bgimg:'Imagem de fundo',pick:'Escolher imagem',rmimg:'Remover imagem',noimg:'Nenhuma imagem selecionada',hasimg:'Usando imagem personalizada',bgcol:'Cor de fundo',hue:'Matiz',sat:'Saturação',bri:'Brilho',reset:'Redefinir cor',lang:'Idioma',close:'Fechar',imgerr:'Não foi possível carregar essa imagem'},
-ja:{home:'ホーム',lib:'ライブラリ',favs:'お気に入り',all:'すべてのアプリ',play:'プレイ',add:'ライブラリに追加',rm:'削除',faved:'★ お気に入り済み',fav:'☆ お気に入り',never:'未プレイ',notlib:'まだライブラリにありません',now:'たった今プレイ',min:n=>`${n}分前にプレイ`,hr:n=>`${n}時間前にプレイ`,day:n=>`${n}日前にプレイ`,move:'移動',hfav:'お気に入り',tabs:'タブ切替',hset:'設定',eopen:'インストール済みアプリを表示するには、このページをランチャーアプリ内で開いてください。',escan:'インストール済みアプリをスキャン中…',efav:'お気に入りはまだありません。ゲームを選んで Y を押すか、「お気に入り」をタップしてください。',eall:'他のアプリは見つかりませんでした。',egames:'ゲームがまだ見つかりません。「すべてのアプリ」から追加してください。',added:n=>`${n} をライブラリに追加しました`,noinfo:'情報がありません',st:'設定',bgimg:'背景画像',pick:'画像を選ぶ',rmimg:'画像を削除',noimg:'画像が選択されていません',hasimg:'カスタム画像を使用中',bgcol:'背景色',hue:'色相',sat:'彩度',bri:'明るさ',reset:'色をリセット',lang:'言語',close:'閉じる',imgerr:'この画像を読み込めませんでした'}
+en:{home:'Home',lib:'Library',favs:'Favorites',all:'All apps',play:'Play',add:'Add to library',rm:'Remove',faved:'★ Favorited',fav:'☆ Favorite',never:'Not played yet',notlib:'Not in your library yet',now:'Last played just now',min:n=>`Last played ${n} min ago`,hr:n=>`Last played ${n} hours ago`,day:n=>`Last played ${n} days ago`,move:'Move',hfav:'Favorite',tabs:'Switch tab',hset:'Settings',eopen:'Open this page inside the launcher app to see installed apps.',escan:'Scanning installed apps…',efav:'No favorites yet. Select a game, then press Y or tap Favorite.',eall:'No other apps found.',egames:'No games found yet. Open All apps and add yours.',added:n=>`${n} added to Library`,noinfo:'No info available',st:'Settings',bgimg:'Background image',pick:'Choose image',rmimg:'Remove image',noimg:'No image selected',hasimg:'Custom image in use',bgcol:'Background color',hue:'Hue',sat:'Saturation',bri:'Brightness',reset:'Reset color',lang:'Language',close:'Close',colors:'Colors',cbg:'Background',cplay:'Play button',csel:'Selection outline',sound:'Click sound',off:'Off',imgerr:'Could not load that image'},
+hi:{home:'होम',lib:'लाइब्रेरी',favs:'पसंदीदा',all:'सभी ऐप्स',play:'खेलें',add:'लाइब्रेरी में जोड़ें',rm:'हटाएं',faved:'★ पसंदीदा',fav:'☆ पसंदीदा',never:'अभी तक नहीं खेला',notlib:'अभी आपकी लाइब्रेरी में नहीं है',now:'अभी-अभी खेला',min:n=>`${n} मिनट पहले खेला`,hr:n=>`${n} घंटे पहले खेला`,day:n=>`${n} दिन पहले खेला`,move:'नेविगेट',hfav:'पसंदीदा',tabs:'टैब बदलें',hset:'सेटिंग्स',eopen:'इंस्टॉल किए गए ऐप्स देखने के लिए यह पेज लॉन्चर ऐप के अंदर खोलें।',escan:'इंस्टॉल किए गए ऐप्स खोजे जा रहे हैं…',efav:'अभी कोई पसंदीदा नहीं है। कोई गेम चुनें, फिर Y दबाएं या पसंदीदा पर टैप करें।',eall:'कोई और ऐप नहीं मिला।',egames:'अभी कोई गेम नहीं मिला। "सभी ऐप्स" खोलकर अपने गेम जोड़ें।',added:n=>`${n} लाइब्रेरी में जोड़ा गया`,noinfo:'कोई जानकारी उपलब्ध नहीं',st:'सेटिंग्स',bgimg:'बैकग्राउंड इमेज',pick:'इमेज चुनें',rmimg:'इमेज हटाएं',noimg:'कोई इमेज नहीं चुनी गई',hasimg:'कस्टम इमेज लगी है',bgcol:'बैकग्राउंड रंग',hue:'रंगत',sat:'गहराई',bri:'चमक',reset:'रंग रीसेट करें',lang:'भाषा',close:'बंद करें',colors:'रंग',cbg:'बैकग्राउंड',cplay:'प्ले बटन',csel:'सिलेक्शन आउटलाइन',sound:'क्लिक साउंड',off:'बंद',imgerr:'यह इमेज लोड नहीं हो सकी'},
+es:{home:'Inicio',lib:'Biblioteca',favs:'Favoritos',all:'Todas las apps',play:'Jugar',add:'Añadir a la biblioteca',rm:'Quitar',faved:'★ En favoritos',fav:'☆ Favorito',never:'Aún no jugado',notlib:'Aún no está en tu biblioteca',now:'Jugado hace un momento',min:n=>`Jugado hace ${n} min`,hr:n=>`Jugado hace ${n} h`,day:n=>`Jugado hace ${n} d`,move:'Mover',hfav:'Favorito',tabs:'Cambiar pestaña',hset:'Ajustes',eopen:'Abre esta página dentro de la app del launcher para ver las apps instaladas.',escan:'Buscando apps instaladas…',efav:'Aún no hay favoritos. Selecciona un juego y pulsa Y o toca Favorito.',eall:'No se encontraron otras apps.',egames:'Aún no se encontraron juegos. Abre «Todas las apps» y añade los tuyos.',added:n=>`${n} añadido a la biblioteca`,noinfo:'Sin información disponible',st:'Ajustes',bgimg:'Imagen de fondo',pick:'Elegir imagen',rmimg:'Quitar imagen',noimg:'Ninguna imagen seleccionada',hasimg:'Usando imagen personalizada',bgcol:'Color de fondo',hue:'Tono',sat:'Saturación',bri:'Brillo',reset:'Restablecer color',lang:'Idioma',close:'Cerrar',colors:'Colores',cbg:'Fondo',cplay:'Botón Jugar',csel:'Contorno de selección',sound:'Sonido de clic',off:'Desactivado',imgerr:'No se pudo cargar esa imagen'},
+fr:{home:'Accueil',lib:'Bibliothèque',favs:'Favoris',all:'Toutes les apps',play:'Jouer',add:'Ajouter à la bibliothèque',rm:'Retirer',faved:'★ Dans les favoris',fav:'☆ Favori',never:'Jamais joué',notlib:'Pas encore dans votre bibliothèque',now:'Joué à l’instant',min:n=>`Joué il y a ${n} min`,hr:n=>`Joué il y a ${n} h`,day:n=>`Joué il y a ${n} j`,move:'Déplacer',hfav:'Favori',tabs:'Changer d’onglet',hset:'Réglages',eopen:'Ouvrez cette page dans l’application du launcher pour voir les apps installées.',escan:'Recherche des apps installées…',efav:'Aucun favori pour l’instant. Sélectionnez un jeu, puis appuyez sur Y ou touchez Favori.',eall:'Aucune autre app trouvée.',egames:'Aucun jeu trouvé pour l’instant. Ouvrez « Toutes les apps » pour ajouter les vôtres.',added:n=>`${n} ajouté à la bibliothèque`,noinfo:'Aucune info disponible',st:'Réglages',bgimg:'Image d’arrière-plan',pick:'Choisir une image',rmimg:'Retirer l’image',noimg:'Aucune image sélectionnée',hasimg:'Image personnalisée utilisée',bgcol:'Couleur d’arrière-plan',hue:'Teinte',sat:'Saturation',bri:'Luminosité',reset:'Réinitialiser la couleur',lang:'Langue',close:'Fermer',colors:'Couleurs',cbg:'Arrière-plan',cplay:'Bouton Jouer',csel:'Contour de sélection',sound:'Son de clic',off:'Désactivé',imgerr:'Impossible de charger cette image'},
+pt:{home:'Início',lib:'Biblioteca',favs:'Favoritos',all:'Todos os apps',play:'Jogar',add:'Adicionar à biblioteca',rm:'Remover',faved:'★ Favorito',fav:'☆ Favoritar',never:'Ainda não jogado',notlib:'Ainda não está na sua biblioteca',now:'Jogado agora há pouco',min:n=>`Jogado há ${n} min`,hr:n=>`Jogado há ${n} h`,day:n=>`Jogado há ${n} d`,move:'Mover',hfav:'Favorito',tabs:'Trocar aba',hset:'Configurações',eopen:'Abra esta página dentro do app do launcher para ver os apps instalados.',escan:'Procurando apps instalados…',efav:'Nenhum favorito ainda. Selecione um jogo e pressione Y ou toque em Favoritar.',eall:'Nenhum outro app encontrado.',egames:'Nenhum jogo encontrado ainda. Abra "Todos os apps" e adicione os seus.',added:n=>`${n} adicionado à biblioteca`,noinfo:'Nenhuma informação disponível',st:'Configurações',bgimg:'Imagem de fundo',pick:'Escolher imagem',rmimg:'Remover imagem',noimg:'Nenhuma imagem selecionada',hasimg:'Usando imagem personalizada',bgcol:'Cor de fundo',hue:'Matiz',sat:'Saturação',bri:'Brilho',reset:'Redefinir cor',lang:'Idioma',close:'Fechar',colors:'Cores',cbg:'Fundo',cplay:'Botão Jogar',csel:'Contorno da seleção',sound:'Som de clique',off:'Desativado',imgerr:'Não foi possível carregar essa imagem'},
+ja:{home:'ホーム',lib:'ライブラリ',favs:'お気に入り',all:'すべてのアプリ',play:'プレイ',add:'ライブラリに追加',rm:'削除',faved:'★ お気に入り済み',fav:'☆ お気に入り',never:'未プレイ',notlib:'まだライブラリにありません',now:'たった今プレイ',min:n=>`${n}分前にプレイ`,hr:n=>`${n}時間前にプレイ`,day:n=>`${n}日前にプレイ`,move:'移動',hfav:'お気に入り',tabs:'タブ切替',hset:'設定',eopen:'インストール済みアプリを表示するには、このページをランチャーアプリ内で開いてください。',escan:'インストール済みアプリをスキャン中…',efav:'お気に入りはまだありません。ゲームを選んで Y を押すか、「お気に入り」をタップしてください。',eall:'他のアプリは見つかりませんでした。',egames:'ゲームがまだ見つかりません。「すべてのアプリ」から追加してください。',added:n=>`${n} をライブラリに追加しました`,noinfo:'情報がありません',st:'設定',bgimg:'背景画像',pick:'画像を選ぶ',rmimg:'画像を削除',noimg:'画像が選択されていません',hasimg:'カスタム画像を使用中',bgcol:'背景色',hue:'色相',sat:'彩度',bri:'明るさ',reset:'色をリセット',lang:'言語',close:'閉じる',colors:'色',cbg:'背景',cplay:'プレイボタン',csel:'選択の枠線',sound:'クリック音',off:'オフ',imgerr:'この画像を読み込めませんでした'}
 };
 const tr=(k,...a)=>{const d=T[S.cfg.lang]||T.en,v=d[k]!=null?d[k]:T.en[k];return typeof v=='function'?v(...a):v};
 const hx=n=>Math.round(n).toString(16).padStart(2,'0');
@@ -164,10 +177,14 @@ function lum(c){const v=[1,3,5].map(k=>{const x=parseInt(c.slice(k,k+2),16)/255;
 window.setInsets=(l,t,r,b)=>{const s=document.documentElement.style;s.setProperty('--sl',l+'px');s.setProperty('--st',t+'px');s.setProperty('--sr',r+'px');s.setProperty('--sb',b+'px')};
 let A=[],ready=false,tab=0,i=0,timer=null,S={fav:[],add:[],hide:[],last:{}};
 try{Object.assign(S,JSON.parse(localStorage.getItem('gl')||'{}'))}catch(e){}
-S.cfg=Object.assign({lang:'en',bg:'#0c141c'},S.cfg);
+const SND=['Soft Keycap','Muted Linear','Tactile Bump','Low Thock','Crisp Switch','Rubber Dome','Double Tap','Desk Button','Soft Pop','Quiet Click','Premium Key'];
+S.cfg=Object.assign({lang:'en',bg:'#0c141c',snd:0,play:null,sel:null},S.cfg);
 if(!T[S.cfg.lang])S.cfg.lang='en';
-if(!/^#[0-9a-f]{6}$/i.test(S.cfg.bg))S.cfg.bg='#0c141c';
-let bgData='',hsv=hex2hsv(S.cfg.bg),nav=false,sfi=0;
+const okc=c=>/^#[0-9a-f]{6}$/i.test(c);
+if(!okc(S.cfg.bg))S.cfg.bg='#0c141c';
+['play','sel'].forEach(k=>{if(!okc(S.cfg[k]))S.cfg[k]=null});
+if(!(S.cfg.snd>=-1&&S.cfg.snd<SND.length))S.cfg.snd=0;
+let bgData='',tgt='bg',hsv=hex2hsv(S.cfg.bg),nav=false,sfi=0;
 const save=()=>{try{localStorage.setItem('gl',JSON.stringify(S))}catch(e){}};
 const has=(k,p)=>S[k].includes(p);
 // Games = apps Android marks as games, plus any app the person adds from All apps
@@ -214,6 +231,7 @@ function toast(t,ms=2600){const e=$('#toast');e.textContent=t;e.classList.add('o
 function stop(){clearTimeout(timer);timer=null;$('#ov').classList.remove('on')}
 function play(){
   const a=list()[i];if(!a||timer)return;
+  snd();
   if(tab==3){S.add.push(a.p);S.hide=S.hide.filter(x=>x!=a.p);save();toast(tr('added',a.n));return build()}
   const o=$('#ov');$('#oi').src=a.i;$('#ot').textContent=a.n;
   o.classList.remove('on');void o.offsetWidth;o.classList.add('on');
@@ -225,7 +243,7 @@ function act(a){
   if(setOpen())return setAct(a);
   if(a=='set')return openSet();
   const L=list(),n=L.length,el=$('#list');
-  const cols=Math.max(1,getComputedStyle(el).gridTemplateColumns.split(' ').length);
+  const o=i,cols=Math.max(1,getComputedStyle(el).gridTemplateColumns.split(' ').length);
   if(a=='l')i=Math.max(0,i-1);
   else if(a=='r')i=Math.max(0,Math.min(n-1,i+1));
   else if(a=='u'){if(i-cols>=0)i-=cols}
@@ -240,9 +258,10 @@ function act(a){
     }
   }
   else if(a=='tl'||a=='tr'){tab=(tab+(a=='tr'?1:3))%4;i=0;return build()}
+  if(i!=o)snd();
   paint();
 }
-$('#list').addEventListener('click',e=>{const c=e.target.closest('.tile');if(!c)return;const k=+c.dataset.k;if(k==i)play();else{i=k;paint()}});
+$('#list').addEventListener('click',e=>{const c=e.target.closest('.tile');if(!c)return;const k=+c.dataset.k;if(k==i)play();else{i=k;snd();paint()}});
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=+b.dataset.t;i=0;build()});
 $('#play').onclick=play;
 // tap "Launcher" to see screen/cutout info
@@ -275,12 +294,19 @@ const tick=()=>$('#clk').textContent=new Date().toLocaleTimeString([],{hour:'num
 tick();setInterval(tick,15000);
 try{if(navigator.getBattery)navigator.getBattery().then(b=>{const u=()=>$('#bat').textContent=Math.round(b.level*100)+'%'+(b.charging?' ⚡':'');u();b.onlevelchange=b.onchargingchange=u}).catch(()=>{})}catch(e){}
 // ---- settings: background image, background color, language ----
-const SW=['#0c141c','#000000','#1e1e24','#0b1d3a','#231942','#0f2a1d','#3a0f1a','#0b3a3a','#2b3440','#f2f5f7'];
+const PAL={bg:['#0c141c','#000000','#1e1e24','#0b1d3a','#231942','#0f2a1d','#3a0f1a','#0b3a3a','#2b3440','#f2f5f7'],
+  play:['#1b9dff','#22c55e','#ef4444','#f59e0b','#a855f7','#ec4899','#14b8a6','#f97316','#eab308','#ffffff'],
+  sel:['#67c1f5','#ffffff','#ffd25e','#4ade80','#f87171','#c084fc','#f472b6','#2dd4bf','#fb923c','#1b9dff']};
+const DEF={bg:'#0c141c',play:'#1b9dff',sel:'#67c1f5'};
+const cur=t=>S.cfg[t]||DEF[t];
+const snd=()=>{try{if(S.cfg.snd>=0)Android.click(S.cfg.snd)}catch(e){}};
 function applyTheme(){
   const c=S.cfg.bg,r=document.documentElement,b=$('#bgimg');
   r.style.setProperty('--bg',c);
   r.classList.toggle('light',!bgData&&lum(c)>.22);
   b.style.backgroundImage=bgData?`url("${bgData}")`:'none';b.hidden=!bgData;
+  ['play','sel'].forEach(k=>S.cfg[k]?r.style.setProperty('--'+k,S.cfg[k]):r.style.removeProperty('--'+k));
+  r.style.setProperty('--playt',lum(cur('play'))>.22?'#10202c':'#fff');
   try{Android.setBgColor(c)}catch(e){}
 }
 function applyLang(){
@@ -296,17 +322,19 @@ const setOpen=()=>!$('#set').hidden;
 const sfs=()=>[...$('#set').querySelectorAll('.sf')].filter(e=>!e.disabled);
 function mark(){const L=sfs();sfi=Math.max(0,Math.min(sfi,L.length-1));L.forEach((e,k)=>e.classList.toggle('fc',nav&&k==sfi));const e=L[sfi];if(nav&&e)e.scrollIntoView({block:'nearest'})}
 function paintSet(){
-  const c=S.cfg.bg.toLowerCase();
+  const c=cur(tgt).toLowerCase();
   $('#hh').value=hsv[0];$('#hs').value=hsv[1];$('#hv').value=hsv[2];
-  $('#sw').innerHTML=SW.map(x=>`<button class="swt sf${x==c?' on':''}" data-c="${x}" style="background:${x}" aria-label="${x}"></button>`).join('');
+  $('#tg').innerHTML=[['bg','cbg'],['play','cplay'],['sel','csel']].map(([k,l])=>`<button class="btn ch sf${k==tgt?' on':''}" data-t="${k}">${tr(l)}</button>`).join('');
+  $('#sw').innerHTML=PAL[tgt].map(x=>`<button class="swt sf${x==c?' on':''}" data-c="${x}" style="background:${x}" aria-label="${x}"></button>`).join('');
   $('#lg').innerHTML=LANGS.map(([k,n])=>`<button class="btn lb sf${k==S.cfg.lang?' on':''}" data-l="${k}">${n}</button>`).join('');
+  $('#sn').innerHTML=[-1,...SND.keys()].map(k=>`<button class="btn so sf${k==S.cfg.snd?' on':''}" data-s="${k}">${k<0?tr('off'):(k+1)+' · '+SND[k]}</button>`).join('');
   $('#imgnote').textContent=tr(bgData?'hasimg':'noimg');
   $('#unpick').disabled=!bgData;
   mark();
 }
 function openSet(){if(timer)return;nav=false;sfi=0;$('#set').hidden=false;paintSet()}
 function closeSet(){$('#set').hidden=true}
-function setColor(c,fromHex){S.cfg.bg=c;if(fromHex)hsv=hex2hsv(c);save();applyTheme();paintSet()}
+function setColor(c,fromHex){S.cfg[tgt]=c;if(fromHex)hsv=hex2hsv(cur(tgt));save();applyTheme();paintSet()}
 // controller / keyboard inside the settings panel
 function setAct(a){
   if(a=='back'||a=='set')return closeSet();
@@ -324,7 +352,9 @@ $('#pick').onclick=()=>{try{Android.pickImage()}catch(e){toast(tr('imgerr'))}};
 $('#unpick').onclick=()=>{try{Android.clearBg()}catch(e){}bgData='';applyTheme();paintSet()};
 $('#sw').onclick=e=>{const b=e.target.closest('.swt');if(b)setColor(b.dataset.c,true)};
 $('#lg').onclick=e=>{const b=e.target.closest('.lb');if(!b)return;S.cfg.lang=b.dataset.l;save();applyLang()};
-$('#rc').onclick=()=>setColor('#0c141c',true);
+$('#rc').onclick=()=>setColor(tgt=='bg'?DEF.bg:null,true);
+$('#tg').onclick=e=>{const b=e.target.closest('.ch');if(!b)return;tgt=b.dataset.t;hsv=hex2hsv(cur(tgt));paintSet()};
+$('#sn').onclick=e=>{const b=e.target.closest('.so');if(!b)return;S.cfg.snd=+b.dataset.s;save();paintSet();snd()};
 ['hh','hs','hv'].forEach(id=>$('#'+id).oninput=()=>{hsv=[+$('#hh').value,+$('#hs').value,+$('#hv').value];setColor(hsv2hex(hsv[0],hsv[1],hsv[2]),false)});
 applyTheme();applyLang();setTimeout(loadBg,0);
 requestAnimationFrame(()=>setTimeout(scan,50));
