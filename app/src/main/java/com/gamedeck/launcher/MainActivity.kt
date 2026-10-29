@@ -90,6 +90,7 @@ class MainActivity : Activity() {
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            settings.mediaPlaybackRequiresUserGesture = false
             setBackgroundColor(savedBg)
             addJavascriptInterface(Bridge(), "Android")
             webViewClient = object : WebViewClient() {
