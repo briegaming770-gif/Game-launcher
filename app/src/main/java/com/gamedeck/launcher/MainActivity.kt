@@ -12,7 +12,9 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.media.AudioAttributes
 import android.media.ExifInterface
+import android.media.SoundPool
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -35,6 +37,8 @@ class MainActivity : Activity() {
     private val reqPick = 4711
     private val prefs by lazy { getSharedPreferences("launcher", Context.MODE_PRIVATE) }
     private val bgFile by lazy { File(filesDir, "bg.jpg") }
+    private var pool: SoundPool? = null
+    private var clickIds = IntArray(0)
 
     private var lastInsets: WindowInsets? = null
     private var dbgText = "No info yet"
@@ -72,6 +76,17 @@ class MainActivity : Activity() {
             window.attributes = lp
         }
         if (Build.VERSION.SDK_INT >= 30) window.setDecorFitsSystemWindows(false)
+        // Click sounds (assets/sounds/*.wav, in file-name order) are loaded once for instant playback
+        try {
+            val sp = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(
+                AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
+            ).build()
+            val names = (assets.list("sounds") ?: emptyArray()).filter { it.endsWith(".wav") }.sorted()
+            clickIds = IntArray(names.size) { loadClick(sp, names[it]) }
+            pool = sp
+        } catch (e: Exception) {
+        }
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -163,6 +178,24 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun loadClick(sp: SoundPool, name: String): Int = try {
+        assets.openFd("sounds/$name").use { sp.load(it, 1) }
+    } catch (e: Exception) {
+        try {
+            val f = File(cacheDir, name)
+            assets.open("sounds/$name").use { i -> f.outputStream().use { o -> i.copyTo(o) } }
+            sp.load(f.path, 1)
+        } catch (e2: Exception) {
+            0
+        }
+    }
+
+    override fun onDestroy() {
+        pool?.release()
+        pool = null
+        super.onDestroy()
+    }
+
     override fun onBackPressed() {
         web.evaluateJavascript("act('back')", null)
     }
@@ -229,6 +262,12 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun clearBg() {
             bgFile.delete()
+        }
+
+        @JavascriptInterface
+        fun click(n: Int) {
+            val sp = pool ?: return
+            if (n >= 0 && n < clickIds.size && clickIds[n] != 0) sp.play(clickIds[n], 1f, 1f, 1, 0, 1f)
         }
 
         @JavascriptInterface
